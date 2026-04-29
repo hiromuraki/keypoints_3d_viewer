@@ -2,7 +2,7 @@
 FROM python:3.12-slim
 
 # 2. 从官方的 uv alpine 镜像中直接复制 uv 和 uvx 二进制文件到当前环境中
-COPY --from=ghcr.io/astral-sh/uv:alpine /uv /uvx /bin/
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 
 # 3. 设置工作目录
 WORKDIR /app
