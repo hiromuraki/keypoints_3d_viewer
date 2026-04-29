@@ -1,0 +1,12 @@
+[project]
+name = "keypoints-3d-viewer"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.13,<3.14"
+dependencies = [
+    "fastapi>=0.135.2",
+    "numpy>=2.4.3",
+    "python-multipart>=0.0.22",
+    "uvicorn>=0.42.0",
+]

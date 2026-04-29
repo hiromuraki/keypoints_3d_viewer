@@ -1,0 +1,297 @@
+<!doctype html>
+<html lang="zh-CN">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>3D 骨骼可视化</title>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+        <style>
+            :root {
+                --primary: #2563eb;
+                --bg: #0f172a;
+                --panel: rgba(30, 41, 59, 0.7);
+            }
+            body {
+                margin: 0;
+                font-family: "Inter", system-ui, sans-serif;
+                background: var(--bg);
+                color: white;
+            }
+
+            /* 侧边控制面板 - 毛玻璃效果 */
+            #ui-panel {
+                position: absolute;
+                top: 20px;
+                left: 20px;
+                width: 320px;
+                background: var(--panel);
+                backdrop-filter: blur(12px);
+                padding: 24px;
+                border-radius: 16px;
+                border: 1px solid rgba(255, 255, 255, 0.1);
+                box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3);
+                z-index: 100;
+            }
+
+            .card {
+                margin-bottom: 20px;
+            }
+            h2 {
+                margin: 0 0 8px;
+                font-size: 1.2rem;
+                color: #60a5fa;
+            }
+            p {
+                font-size: 0.85rem;
+                color: #94a3b8;
+                margin-bottom: 16px;
+            }
+
+            /* 自定义滑块 */
+            input[type="range"] {
+                width: 100%;
+                height: 6px;
+                border-radius: 3px;
+                background: #334155;
+                outline: none;
+                -webkit-appearance: none;
+            }
+            input[type="range"]::-webkit-slider-thumb {
+                -webkit-appearance: none;
+                width: 16px;
+                height: 16px;
+                background: var(--primary);
+                border-radius: 50%;
+                cursor: pointer;
+            }
+
+            /* 按钮样式 */
+            .btn {
+                background: var(--primary);
+                color: white;
+                border: none;
+                padding: 10px 20px;
+                border-radius: 8px;
+                font-weight: 600;
+                cursor: pointer;
+                transition: 0.2s;
+                width: 100%;
+            }
+            .btn:hover {
+                background: #1d4ed8;
+                transform: translateY(-1px);
+            }
+
+            .upload-area {
+                border: 2px dashed #475569;
+                padding: 20px;
+                text-align: center;
+                border-radius: 12px;
+                cursor: pointer;
+                transition: 0.3s;
+            }
+            .upload-area:hover {
+                border-color: var(--primary);
+                background: rgba(37, 99, 235, 0.1);
+            }
+
+            #player-controls {
+                display: none;
+                margin-top: 20px;
+                border-top: 1px solid #475569;
+                pt: 20px;
+            }
+            .info-row {
+                display: flex;
+                justify-content: space-between;
+                font-size: 0.8rem;
+                margin: 10px 0;
+            }
+        </style>
+    </head>
+    <body>
+        <div id="ui-panel">
+            <div class="card">
+                <h2>3D 骨骼可视化</h2>
+                <div class="upload-area" onclick="document.getElementById('fileInput').click()">
+                    <span id="upload-status">点击上传 NPZ 文件</span>
+                    <input type="file" id="fileInput" accept=".npz" style="display: none" />
+                </div>
+            </div>
+
+            <div id="player-controls">
+                <div class="card">
+                    <div class="info-row">
+                        <span>播放控制</span>
+                        <span id="fps-display">30 FPS</span>
+                    </div>
+                    <button class="btn" id="playBtn">⏸ 暂停播放</button>
+                    <div style="margin-top: 15px">
+                        <label style="font-size: 0.8rem">播放速度 (FPS)</label>
+                        <input type="range" id="fpsSlider" min="1" max="120" value="30" />
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="info-row">
+                        <span>进度: <b id="frameLabel">0</b></span>
+                        <span>总计: <b id="totalFramesLabel">0</b> 帧</span>
+                    </div>
+                    <input type="range" id="progressSlider" min="0" value="0" />
+                </div>
+            </div>
+        </div>
+
+        <div id="canvas-container"></div>
+
+        <script>
+            // --- Three.js 引擎设置 ---
+            const scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x0f172a);
+            // 加载雾化效果增强深度感
+            scene.fog = new THREE.Fog(0x0f172a, 5, 15);
+
+            const camera = new THREE.PerspectiveCamera(
+                45,
+                window.innerWidth / window.innerHeight,
+                0.1,
+                100,
+            );
+            camera.position.set(3, 2, 4);
+
+            const renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(window.devicePixelRatio);
+            document.getElementById("canvas-container").appendChild(renderer.domElement);
+
+            const controls = new THREE.OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+
+            // 灯光
+            const light = new THREE.AmbientLight(0xffffff, 0.8);
+            scene.add(light);
+
+            // 网格与坐标轴
+            const grid = new THREE.GridHelper(10, 20, 0x334155, 0x1e293b);
+            scene.add(grid);
+
+            // 物体定义
+            const jointGeo = new THREE.SphereGeometry(0.025, 16, 16);
+            const jointMat = new THREE.MeshBasicMaterial({ color: 0x60a5fa });
+            const jointsGroup = new THREE.Group();
+            scene.add(jointsGroup);
+
+            const lineMat = new THREE.LineBasicMaterial({
+                color: 0x3b82f6,
+                transparent: true,
+                opacity: 0.6,
+            });
+            const linesGroup = new THREE.Group();
+            scene.add(linesGroup);
+
+            // --- 逻辑变量 ---
+            let motionData = null;
+            let topology = null;
+            let currentFrame = 0;
+            let isPlaying = true;
+            let fps = 30;
+            let lastFrameTime = 0;
+
+            // --- 核心渲染循环 ---
+            function animate(now) {
+                requestAnimationFrame(animate);
+
+                if (motionData && isPlaying) {
+                    const interval = 1000 / fps;
+                    const delta = now - lastFrameTime;
+
+                    if (delta > interval) {
+                        currentFrame = (currentFrame + 1) % motionData.length;
+                        renderPose(currentFrame);
+                        lastFrameTime = now - (delta % interval);
+                    }
+                }
+                controls.update();
+                renderer.render(scene, camera);
+            }
+
+            function renderPose(index) {
+                const frame = motionData[index];
+                // 更新点
+                if (jointsGroup.children.length === 0) {
+                    frame.forEach(() => jointsGroup.add(new THREE.Mesh(jointGeo, jointMat)));
+                }
+                frame.forEach((pos, i) => {
+                    jointsGroup.children[i].position.set(pos[0], -pos[1], pos[2]);
+                });
+
+                // 更新线
+                linesGroup.clear();
+                const lineGeo = new THREE.BufferGeometry();
+                const linePoints = [];
+                topology.forEach((bone) => {
+                    const s = frame[bone[0]],
+                        e = frame[bone[1]];
+                    linePoints.push(s[0], -s[1], s[2], e[0], -e[1], e[2]);
+                });
+                lineGeo.setAttribute("position", new THREE.Float32BufferAttribute(linePoints, 3));
+                linesGroup.add(new THREE.LineSegments(lineGeo, lineMat));
+
+                document.getElementById("frameLabel").innerText = index;
+                document.getElementById("progressSlider").value = index;
+            }
+
+            // --- 事件绑定 ---
+            document.getElementById("fileInput").onchange = async (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+
+                const fd = new FormData();
+                fd.append("file", file);
+                document.getElementById("upload-status").innerText = "⏳ 解析中...";
+
+                const res = await fetch("/api/upload_npz", { method: "POST", body: fd }).then((r) =>
+                    r.json(),
+                );
+
+                if (res.status === "success") {
+                    motionData = res.frames;
+                    topology = res.bones_topology;
+                    document.getElementById("upload-status").innerText = "✅ " + file.name;
+                    document.getElementById("player-controls").style.display = "block";
+                    document.getElementById("totalFramesLabel").innerText = motionData.length - 1;
+                    document.getElementById("progressSlider").max = motionData.length - 1;
+                    renderPose(0);
+                }
+            };
+
+            document.getElementById("playBtn").onclick = () => {
+                isPlaying = !isPlaying;
+                document.getElementById("playBtn").innerText = isPlaying
+                    ? "⏸ 暂停播放"
+                    : "▶ 继续播放";
+            };
+
+            document.getElementById("fpsSlider").oninput = (e) => {
+                fps = e.target.value;
+                document.getElementById("fps-display").innerText = fps + " FPS";
+            };
+
+            document.getElementById("progressSlider").oninput = (e) => {
+                isPlaying = false;
+                document.getElementById("playBtn").innerText = "▶ 继续播放";
+                currentFrame = parseInt(e.target.value);
+                renderPose(currentFrame);
+            };
+
+            window.onresize = () => {
+                camera.aspect = window.innerWidth / window.innerHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(window.innerWidth, window.innerHeight);
+            };
+
+            animate(0);
+        </script>
+    </body>
+</html>
