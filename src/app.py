@@ -1,7 +1,8 @@
 # 安装依赖: pip install fastapi uvicorn python-multipart numpy
 from fastapi import FastAPI, UploadFile, File
 from fastapi.responses import JSONResponse
-from fastapi.staticfiles import StaticFiles  # 导入静态文件托管组件
+from fastapi.staticfiles import StaticFiles
+from pathlib import Path
 import numpy as np
 import io
 
@@ -34,7 +35,8 @@ async def process_npz(file: UploadFile = File(...)):
     except Exception as e:
         return JSONResponse(content={"status": "error", "message": str(e)}, status_code=400)
 
-app.mount("/", StaticFiles(directory="../static", html=True), name="static")
+STATIC_DIR = str(Path(__file__).resolve().parent.parent / "static")
+app.mount("/", StaticFiles(directory=STATIC_DIR, html=True), name="static")
 
 if __name__ == "__main__":
     import uvicorn

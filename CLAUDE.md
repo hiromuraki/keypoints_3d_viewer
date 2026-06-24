@@ -10,7 +10,7 @@ A 3D skeleton keypoint viewer. Users upload `.npz` files containing motion captu
 
 The entire application is two files:
 
-- **[src/app.py](src/app.py)** — FastAPI server with a single endpoint `POST /api/upload_npz`. Accepts a `.npz` file via multipart upload, extracts keypoint data (looks for the `reconstruction` key first, then falls back to the first key in the archive), and returns JSON with `frames`, `bones_topology`, and `num_frames`. After defining routes, it mounts `StaticFiles` from `../static` to serve the frontend.
+- **[src/app.py](src/app.py)** — FastAPI server with a single endpoint `POST /api/upload_npz`. Accepts a `.npz` file via multipart upload, extracts keypoint data (looks for the `reconstruction` key first, then falls back to the first key in the archive), and returns JSON with `frames`, `bones_topology`, and `num_frames`. Uses `Path(__file__)` to resolve the static directory, so it works regardless of CWD (including in Docker).
 - **[static/index.html](static/index.html)** — A self-contained HTML page with inline CSS and JS. Uses Three.js (r128, CDN-loaded) with OrbitControls for a 3D scene: a dark background, grid, ambient light, and a skeleton rendered as spheres (joints) connected by line segments (bones). Playback controls include play/pause, FPS slider (1–120), and a scrubber. The Y-axis is flipped (`-pos[1]`) to match common coordinate conventions.
 
 The bone topology (`BONES` in [src/app.py:10-14](src/app.py#L10-L14)) is hardcoded as 16 pairs defining a 17-joint skeleton. The frontend receives this topology from the API response and uses it to draw bone lines between joint pairs.
