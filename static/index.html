@@ -72,27 +72,89 @@
             #player-controls {
                 display: none;
             }
+
             .info-row {
                 display: flex;
                 justify-content: space-between;
+                align-items: center;
                 font-size: 0.8rem;
-                margin: 8px 0;
+                margin: 6px 0;
             }
 
             .btn {
                 background: var(--primary);
                 color: white;
                 border: none;
-                padding: 8px 16px;
-                border-radius: 8px;
+                padding: 6px 14px;
+                border-radius: 6px;
                 font-weight: 600;
                 cursor: pointer;
                 transition: 0.2s;
-                width: 100%;
-                font-size: 0.85rem;
+                font-size: 0.82rem;
             }
-            .btn:hover {
-                background: #1d4ed8;
+            .btn:hover { background: #1d4ed8; }
+            .btn.play-btn {
+                width: auto;
+                min-width: 80px;
+                padding: 5px 12px;
+                font-size: 0.8rem;
+            }
+
+            /* 自定义范围滑块 */
+            input[type="range"] {
+                -webkit-appearance: none;
+                appearance: none;
+                width: 100%;
+                height: 5px;
+                border-radius: 3px;
+                background: #334155;
+                outline: none;
+                cursor: pointer;
+                margin: 6px 0;
+            }
+            input[type="range"]::-webkit-slider-thumb {
+                -webkit-appearance: none;
+                appearance: none;
+                width: 16px;
+                height: 16px;
+                border-radius: 50%;
+                background: #e2e8f0;
+                border: 2px solid var(--primary);
+                cursor: pointer;
+                transition: 0.15s;
+                box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+            }
+            input[type="range"]::-webkit-slider-thumb:hover {
+                background: white;
+                transform: scale(1.15);
+            }
+            input[type="range"]::-moz-range-thumb {
+                width: 16px;
+                height: 16px;
+                border-radius: 50%;
+                background: #e2e8f0;
+                border: 2px solid var(--primary);
+                cursor: pointer;
+                box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+            }
+            /* 进度条特殊样式 */
+            #progressSlider {
+                height: 6px;
+                background: #1e293b;
+            }
+            #progressSlider::-webkit-slider-thumb {
+                width: 18px;
+                height: 18px;
+                background: var(--primary);
+                border: 2px solid white;
+            }
+
+            .slider-label {
+                display: flex;
+                justify-content: space-between;
+                font-size: 0.72rem;
+                color: #64748b;
+                margin-bottom: 2px;
             }
 
             /* SVG 骨骼图 */
@@ -186,12 +248,13 @@
                 <h3>▶ 播放控制</h3>
                 <div class="info-row">
                     <span id="fps-display">30 FPS</span>
-                    <button class="btn" id="playBtn" style="width:auto;padding:4px 16px;">⏸ 暂停</button>
+                    <button class="btn play-btn" id="playBtn">⏸ 暂停</button>
                 </div>
-                <label style="font-size:0.75rem;color:#94a3b8;">播放速度</label>
+                <div class="slider-label"><span>播放速度</span><span>1 – 120</span></div>
                 <input type="range" id="fpsSlider" min="1" max="120" value="30" />
-                <div class="info-row" style="margin-top:8px;">
-                    <span>帧: <b id="frameLabel">0</b> / <b id="totalFramesLabel">0</b></span>
+                <div class="info-row">
+                    <span>帧进度</span>
+                    <span><b id="frameLabel">0</b> / <b id="totalFramesLabel">0</b></span>
                 </div>
                 <input type="range" id="progressSlider" min="0" value="0" />
             </div>
@@ -512,8 +575,8 @@
             document.getElementById("playBtn").onclick = () => {
                 isPlaying = !isPlaying;
                 document.getElementById("playBtn").innerText = isPlaying
-                    ? "⏸ 暂停播放"
-                    : "▶ 继续播放";
+                    ? "⏸ 暂停"
+                    : "▶ 播放";
             };
 
             document.getElementById("fpsSlider").oninput = (e) => {
@@ -523,7 +586,7 @@
 
             document.getElementById("progressSlider").oninput = (e) => {
                 isPlaying = false;
-                document.getElementById("playBtn").innerText = "▶ 继续播放";
+                document.getElementById("playBtn").innerText = "▶ 播放";
                 currentFrame = parseInt(e.target.value);
                 renderPose(currentFrame);
             };
