@@ -4,14 +4,8 @@ from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles  # 导入静态文件托管组件
 import numpy as np
 import io
-import os
 
 app = FastAPI()
-
-# --- 核心：静态文件托管 ---
-# 将 /static 目录映射到网页根路径，这样访问 http://localhost:8000/ 就能看到 index.html
-if not os.path.exists("static"):
-    os.makedirs("static")
 
 BONES = [
     [0, 1], [1, 2], [2, 3], [0, 4], [4, 5], [5, 6],
@@ -40,7 +34,7 @@ async def process_npz(file: UploadFile = File(...)):
     except Exception as e:
         return JSONResponse(content={"status": "error", "message": str(e)}, status_code=400)
 
-app.mount("/", StaticFiles(directory="static", html=True), name="static")
+app.mount("/", StaticFiles(directory="../static", html=True), name="static")
 
 if __name__ == "__main__":
     import uvicorn

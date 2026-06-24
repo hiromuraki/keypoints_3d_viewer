@@ -19,77 +19,50 @@
                 color: white;
             }
 
-            /* 侧边控制面板 - 毛玻璃效果 */
+            /* 统一左侧面板 */
             #ui-panel {
                 position: absolute;
-                top: 20px;
-                left: 20px;
-                width: 320px;
+                top: 16px;
+                left: 16px;
+                width: 300px;
+                max-height: calc(100vh - 32px);
+                overflow-y: auto;
                 background: var(--panel);
                 backdrop-filter: blur(12px);
-                padding: 24px;
+                padding: 16px;
                 border-radius: 16px;
                 border: 1px solid rgba(255, 255, 255, 0.1);
                 box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3);
                 z-index: 100;
+                display: flex;
+                flex-direction: column;
+                gap: 10px;
             }
+            #ui-panel::-webkit-scrollbar { width: 4px; }
+            #ui-panel::-webkit-scrollbar-thumb { background: #475569; border-radius: 2px; }
 
-            .card {
-                margin-bottom: 20px;
+            .panel-section {
+                border-top: 1px solid rgba(255, 255, 255, 0.08);
+                padding-top: 10px;
             }
-            h2 {
+            .panel-section:first-child {
+                border-top: none;
+                padding-top: 0;
+            }
+            .panel-section h3 {
                 margin: 0 0 8px;
-                font-size: 1.2rem;
-                color: #60a5fa;
-            }
-            p {
                 font-size: 0.85rem;
                 color: #94a3b8;
-                margin-bottom: 16px;
-            }
-
-            /* 自定义滑块 */
-            input[type="range"] {
-                width: 100%;
-                height: 6px;
-                border-radius: 3px;
-                background: #334155;
-                outline: none;
-                -webkit-appearance: none;
-            }
-            input[type="range"]::-webkit-slider-thumb {
-                -webkit-appearance: none;
-                width: 16px;
-                height: 16px;
-                background: var(--primary);
-                border-radius: 50%;
-                cursor: pointer;
-            }
-
-            /* 按钮样式 */
-            .btn {
-                background: var(--primary);
-                color: white;
-                border: none;
-                padding: 10px 20px;
-                border-radius: 8px;
-                font-weight: 600;
-                cursor: pointer;
-                transition: 0.2s;
-                width: 100%;
-            }
-            .btn:hover {
-                background: #1d4ed8;
-                transform: translateY(-1px);
             }
 
             .upload-area {
                 border: 2px dashed #475569;
-                padding: 20px;
+                padding: 14px;
                 text-align: center;
-                border-radius: 12px;
+                border-radius: 10px;
                 cursor: pointer;
                 transition: 0.3s;
+                font-size: 0.85rem;
             }
             .upload-area:hover {
                 border-color: var(--primary);
@@ -98,54 +71,150 @@
 
             #player-controls {
                 display: none;
-                margin-top: 20px;
-                border-top: 1px solid #475569;
-                pt: 20px;
             }
             .info-row {
                 display: flex;
                 justify-content: space-between;
                 font-size: 0.8rem;
-                margin: 10px 0;
+                margin: 8px 0;
+            }
+
+            .btn {
+                background: var(--primary);
+                color: white;
+                border: none;
+                padding: 8px 16px;
+                border-radius: 8px;
+                font-weight: 600;
+                cursor: pointer;
+                transition: 0.2s;
+                width: 100%;
+                font-size: 0.85rem;
+            }
+            .btn:hover {
+                background: #1d4ed8;
+            }
+
+            /* SVG 骨骼图 */
+            #joint-svg {
+                display: block;
+                width: 100%;
+            }
+            #joint-svg .bone-line {
+                stroke-width: 3;
+                stroke-linecap: round;
+                cursor: pointer;
+                transition: stroke-width 0.15s;
+            }
+            #joint-svg .bone-line.selected {
+                stroke-width: 5;
+                filter: drop-shadow(0 0 4px currentColor);
+            }
+            #joint-svg .bone-hit {
+                stroke: transparent;
+                stroke-width: 14;
+                stroke-linecap: round;
+                cursor: pointer;
+            }
+            #joint-svg .joint-circle {
+                cursor: default;
+            }
+
+            /* 右上角角度显示面板 */
+            #angle-panel {
+                position: absolute;
+                top: 20px;
+                right: 20px;
+                background: var(--panel);
+                backdrop-filter: blur(12px);
+                padding: 16px 20px;
+                border-radius: 16px;
+                border: 1px solid rgba(255, 255, 255, 0.1);
+                box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3);
+                z-index: 100;
+                min-width: 200px;
+            }
+            #angle-panel h3 {
+                margin: 0 0 10px;
+                font-size: 0.95rem;
+                color: #94a3b8;
+            }
+            #angle-list {
+                display: flex;
+                flex-direction: column;
+                gap: 6px;
+            }
+            .angle-entry {
+                font-size: 0.85rem;
+                color: #e2e8f0;
+                display: flex;
+                align-items: center;
+                gap: 6px;
+            }
+            .angle-dot {
+                width: 10px;
+                height: 10px;
+                border-radius: 50%;
+                display: inline-block;
+                flex-shrink: 0;
+            }
+            .angle-empty {
+                font-size: 0.8rem;
+                color: #64748b;
             }
         </style>
     </head>
     <body>
         <div id="ui-panel">
-            <div class="card">
-                <h2>3D 骨骼可视化</h2>
+            <!-- 上传 -->
+            <div class="panel-section">
+                <h3>📁 上传数据</h3>
                 <div class="upload-area" onclick="document.getElementById('fileInput').click()">
                     <span id="upload-status">点击上传 NPZ 文件</span>
                     <input type="file" id="fileInput" accept=".npz" style="display: none" />
                 </div>
             </div>
 
-            <div id="player-controls">
-                <div class="card">
-                    <div class="info-row">
-                        <span>播放控制</span>
-                        <span id="fps-display">30 FPS</span>
-                    </div>
-                    <button class="btn" id="playBtn">⏸ 暂停播放</button>
-                    <div style="margin-top: 15px">
-                        <label style="font-size: 0.8rem">播放速度 (FPS)</label>
-                        <input type="range" id="fpsSlider" min="1" max="120" value="30" />
-                    </div>
-                </div>
+            <!-- 骨骼选择 (始终可见) -->
+            <div class="panel-section">
+                <h3>🦴 骨骼选择</h3>
+                <svg id="joint-svg" viewBox="0 0 260 380" height="360"></svg>
+            </div>
 
-                <div class="card">
-                    <div class="info-row">
-                        <span>进度: <b id="frameLabel">0</b></span>
-                        <span>总计: <b id="totalFramesLabel">0</b> 帧</span>
-                    </div>
-                    <input type="range" id="progressSlider" min="0" value="0" />
+            <!-- 播放控制 (上传后显示) -->
+            <div id="player-controls" class="panel-section">
+                <h3>▶ 播放控制</h3>
+                <div class="info-row">
+                    <span id="fps-display">30 FPS</span>
+                    <button class="btn" id="playBtn" style="width:auto;padding:4px 16px;">⏸ 暂停</button>
                 </div>
+                <label style="font-size:0.75rem;color:#94a3b8;">播放速度</label>
+                <input type="range" id="fpsSlider" min="1" max="120" value="30" />
+                <div class="info-row" style="margin-top:8px;">
+                    <span>帧: <b id="frameLabel">0</b> / <b id="totalFramesLabel">0</b></span>
+                </div>
+                <input type="range" id="progressSlider" min="0" value="0" />
+            </div>
+        </div>
+
+        <!-- 右上角角度显示面板 -->
+        <div id="angle-panel">
+            <h3>📐 骨骼夹角</h3>
+            <div id="angle-list">
+                <span class="angle-empty">选中 ≥2 条相邻骨骼以显示夹角</span>
             </div>
         </div>
 
         <div id="canvas-container"></div>
 
         <script>
+            // 骨骼拓扑 (与后端 src/app.py BONES 保持一致)
+            const BONES = [
+                [0, 1], [1, 2], [2, 3], [0, 4], [4, 5], [5, 6],
+                [0, 7], [7, 8], [8, 9], [9, 10], [8, 11], [11, 12],
+                [12, 13], [8, 14], [14, 15], [15, 16]
+            ];
+
             // --- Three.js 引擎设置 ---
             const scene = new THREE.Scene();
             scene.background = new THREE.Color(0x0f172a);
@@ -178,15 +247,12 @@
 
             // 物体定义
             const jointGeo = new THREE.SphereGeometry(0.025, 16, 16);
-            const jointMat = new THREE.MeshBasicMaterial({ color: 0x60a5fa });
             const jointsGroup = new THREE.Group();
+            const jointMaterials = [];   // 每个关节独立材质，支持单独着色
+            const jointMeshes = [];      // 关节 mesh 引用
             scene.add(jointsGroup);
 
-            const lineMat = new THREE.LineBasicMaterial({
-                color: 0x3b82f6,
-                transparent: true,
-                opacity: 0.6,
-            });
+            const boneLines3D = new Map();   // boneKey → {line, material}
             const linesGroup = new THREE.Group();
             scene.add(linesGroup);
 
@@ -197,6 +263,157 @@
             let isPlaying = true;
             let fps = 30;
             let lastFrameTime = 0;
+
+            // --- 骨骼选择状态 ---
+            const NUM_JOINTS = 17;
+            const DEFAULT_COLOR = '#3b82f6';   // 默认浅蓝
+            const PALETTE = [
+                '#f87171', '#fb923c', '#fbbf24', '#a3e635', '#34d399',
+                '#22d3ee', '#8b5cf6', '#f472b6', '#e879f9', '#f59e0b',
+                '#10b981', '#ef4444', '#6366f1', '#ec4899', '#14b8a6',
+            ];
+            const selectedBones = new Map();   // boneKey → '#hexcolor'
+            let paletteIdx = 0;
+
+            // 骨骼 key: 两个关节点索引排序后的字符串 "i-j"
+            function boneKey(a, b) {
+                return a < b ? `${a}-${b}` : `${b}-${a}`;
+            }
+
+            // 获取骨骼颜色 (选中=调色板色, 未选中=默认蓝)
+            function getBoneColor(a, b) {
+                const key = boneKey(a, b);
+                return selectedBones.has(key) ? selectedBones.get(key) : DEFAULT_COLOR;
+            }
+
+            // 构建邻接表 (从 BONES)
+            function buildAdjacency(bones) {
+                const adj = new Map();
+                for (const [a, b] of bones) {
+                    if (!adj.has(a)) adj.set(a, []);
+                    if (!adj.has(b)) adj.set(b, []);
+                    adj.get(a).push(b);
+                    adj.get(b).push(a);
+                }
+                return adj;
+            }
+            let adjacency = new Map();
+
+            // 切换骨骼选中
+            function toggleBone(a, b) {
+                const key = boneKey(a, b);
+                if (selectedBones.has(key)) {
+                    selectedBones.delete(key);
+                } else {
+                    const color = PALETTE[paletteIdx % PALETTE.length];
+                    paletteIdx++;
+                    selectedBones.set(key, color);
+                }
+                updateAllBoneColors();
+                updateAnglePanel();
+                updateBonePanelUI();
+            }
+
+            // 更新3D场景中骨骼颜色与透明度
+            function updateAllBoneColors() {
+                for (const [key, entry] of boneLines3D) {
+                    if (selectedBones.has(key)) {
+                        entry.material.color.set(selectedBones.get(key));
+                        entry.material.opacity = 1.0;
+                    } else {
+                        entry.material.color.set(DEFAULT_COLOR);
+                        entry.material.opacity = 0.35;
+                    }
+                }
+            }
+
+            // 更新SVG面板骨骼颜色
+            function updateBonePanelUI() {
+                const lines = document.querySelectorAll('#joint-svg .bone-line');
+                lines.forEach(l => {
+                    const a = parseInt(l.dataset.a);
+                    const b = parseInt(l.dataset.b);
+                    const key = boneKey(a, b);
+                    if (selectedBones.has(key)) {
+                        l.setAttribute('stroke', selectedBones.get(key));
+                        l.classList.add('selected');
+                    } else {
+                        l.setAttribute('stroke', DEFAULT_COLOR);
+                        l.classList.remove('selected');
+                    }
+                });
+            }
+
+            // 计算两个3D向量夹角 (度)
+            function angleBetween(v1, v2) {
+                const len1 = Math.sqrt(v1[0]*v1[0] + v1[1]*v1[1] + v1[2]*v1[2]);
+                const len2 = Math.sqrt(v2[0]*v2[0] + v2[1]*v2[1] + v2[2]*v2[2]);
+                if (len1 < 1e-9 || len2 < 1e-9) return 0;
+                const dot = v1[0]*v2[0] + v1[1]*v2[1] + v1[2]*v2[2];
+                const cos = Math.max(-1, Math.min(1, dot / (len1 * len2)));
+                return Math.acos(cos) * 180 / Math.PI;
+            }
+
+            // 更新右上角角度面板 — 计算关节处骨骼间夹角
+            function updateAnglePanel() {
+                const list = document.getElementById('angle-list');
+                if (!motionData || selectedBones.size < 2) {
+                    list.innerHTML = '<span class="angle-empty">选中 ≥2 条相邻骨骼以显示夹角</span>';
+                    return;
+                }
+
+                const frame = motionData[currentFrame];
+                const entries = [];
+
+                // 遍历所有关节，找有 ≥2 条选中骨骼汇聚的关节
+                for (let jointIdx = 0; jointIdx < NUM_JOINTS; jointIdx++) {
+                    const neighbors = adjacency.get(jointIdx) || [];
+                    // 筛选出该关节处被选中的骨骼
+                    const selectedNeighbors = neighbors.filter(nb => {
+                        return selectedBones.has(boneKey(jointIdx, nb));
+                    });
+                    if (selectedNeighbors.length < 2) continue;
+
+                    // 计算该关节处每对选中骨骼之间的夹角
+                    for (let i = 0; i < selectedNeighbors.length; i++) {
+                        for (let j = i + 1; j < selectedNeighbors.length; j++) {
+                            const a = selectedNeighbors[i];
+                            const b = selectedNeighbors[j];
+                            // 向量: joint → neighbor_a, joint → neighbor_b
+                            const v1 = [
+                                frame[a][0] - frame[jointIdx][0],
+                                frame[a][1] - frame[jointIdx][1],
+                                frame[a][2] - frame[jointIdx][2],
+                            ];
+                            const v2 = [
+                                frame[b][0] - frame[jointIdx][0],
+                                frame[b][1] - frame[jointIdx][1],
+                                frame[b][2] - frame[jointIdx][2],
+                            ];
+                            const angle = angleBetween(v1, v2);
+                            entries.push({
+                                colorA: getBoneColor(jointIdx, a),
+                                colorB: getBoneColor(jointIdx, b),
+                                angle: angle.toFixed(1),
+                            });
+                        }
+                    }
+                }
+
+                if (entries.length === 0) {
+                    list.innerHTML = '<span class="angle-empty">已选骨骼不相邻，无夹角</span>';
+                    return;
+                }
+
+                list.innerHTML = entries.map(e => `
+                    <div class="angle-entry">
+                        <span class="angle-dot" style="background:${e.colorA}"></span>
+                        <span>·</span>
+                        <span class="angle-dot" style="background:${e.colorB}"></span>
+                        <span>: ${e.angle}°</span>
+                    </div>
+                `).join('');
+            }
 
             // --- 核心渲染循环 ---
             function animate(now) {
@@ -218,28 +435,53 @@
 
             function renderPose(index) {
                 const frame = motionData[index];
-                // 更新点
+                // 初始化：为每个关节创建独立材质和 mesh
                 if (jointsGroup.children.length === 0) {
-                    frame.forEach(() => jointsGroup.add(new THREE.Mesh(jointGeo, jointMat)));
+                    for (let i = 0; i < frame.length; i++) {
+                        const mat = new THREE.MeshBasicMaterial({
+                            color: DEFAULT_COLOR,
+                        });
+                        jointMaterials.push(mat);
+                        const mesh = new THREE.Mesh(jointGeo, mat);
+                        jointMeshes.push(mesh);
+                        jointsGroup.add(mesh);
+                    }
+                    // 为每条骨骼创建独立的 Line
+                    topology.forEach(([a, b]) => {
+                        const key = boneKey(a, b);
+                        const initSelected = selectedBones.has(key);
+                        const mat = new THREE.LineBasicMaterial({
+                            color: getBoneColor(a, b),
+                            transparent: true,
+                            opacity: initSelected ? 1.0 : 0.35,
+                        });
+                        const geo = new THREE.BufferGeometry();
+                        const pts = new Float32Array(6);
+                        geo.setAttribute('position', new THREE.Float32BufferAttribute(pts, 3));
+                        const line = new THREE.Line(geo, mat);
+                        linesGroup.add(line);
+                        boneLines3D.set(key, { line, material: mat, geometry: geo });
+                    });
                 }
+                // 更新关节点位置
                 frame.forEach((pos, i) => {
                     jointsGroup.children[i].position.set(pos[0], -pos[1], pos[2]);
                 });
 
-                // 更新线
-                linesGroup.clear();
-                const lineGeo = new THREE.BufferGeometry();
-                const linePoints = [];
-                topology.forEach((bone) => {
-                    const s = frame[bone[0]],
-                        e = frame[bone[1]];
-                    linePoints.push(s[0], -s[1], s[2], e[0], -e[1], e[2]);
+                // 更新骨骼线位置
+                topology.forEach(([a, b]) => {
+                    const key = boneKey(a, b);
+                    const entry = boneLines3D.get(key);
+                    const s = frame[a], e = frame[b];
+                    const arr = entry.geometry.attributes.position.array;
+                    arr[0] = s[0]; arr[1] = -s[1]; arr[2] = s[2];
+                    arr[3] = e[0]; arr[4] = -e[1]; arr[5] = e[2];
+                    entry.geometry.attributes.position.needsUpdate = true;
                 });
-                lineGeo.setAttribute("position", new THREE.Float32BufferAttribute(linePoints, 3));
-                linesGroup.add(new THREE.LineSegments(lineGeo, lineMat));
 
                 document.getElementById("frameLabel").innerText = index;
                 document.getElementById("progressSlider").value = index;
+                updateAnglePanel();
             }
 
             // --- 事件绑定 ---
@@ -258,6 +500,7 @@
                 if (res.status === "success") {
                     motionData = res.frames;
                     topology = res.bones_topology;
+                    adjacency = buildAdjacency(res.bones_topology);
                     document.getElementById("upload-status").innerText = "✅ " + file.name;
                     document.getElementById("player-controls").style.display = "block";
                     document.getElementById("totalFramesLabel").innerText = motionData.length - 1;
@@ -290,6 +533,84 @@
                 camera.updateProjectionMatrix();
                 renderer.setSize(window.innerWidth, window.innerHeight);
             };
+
+            // --- 初始化人形关节面板 ---
+            // H36M 17关节 A-Pose 布局 (viewBox 260×380)
+            // 0:骨盆 1:右髋 2:右膝 3:右踝  4:左髋 5:左膝 6:左踝
+            // 7:脊柱下 8:胸 9:颈 10:头  11:左肩 12:左肘 13:左腕
+            // 14:右肩 15:右肘 16:右腕
+            const JOINT_LAYOUT = [
+                {x: 130, y: 210}, // 0  骨盆
+                {x: 148, y: 235}, // 1  右髋
+                {x: 158, y: 285}, // 2  右膝
+                {x: 163, y: 340}, // 3  右踝
+                {x: 112, y: 235}, // 4  左髋
+                {x: 102, y: 285}, // 5  左膝
+                {x:  97, y: 340}, // 6  左踝
+                {x: 130, y: 178}, // 7  脊柱下
+                {x: 130, y: 145}, // 8  胸
+                {x: 130, y: 112}, // 9  颈
+                {x: 130, y:  85}, // 10 头
+                {x: 100, y: 158}, // 11 左肩
+                {x:  72, y: 180}, // 12 左肘
+                {x:  48, y: 200}, // 13 左腕
+                {x: 160, y: 158}, // 14 右肩
+                {x: 188, y: 180}, // 15 右肘
+                {x: 212, y: 200}, // 16 右腕
+            ];
+
+            function initJointPanel() {
+                const svg = document.getElementById('joint-svg');
+                svg.innerHTML = '';
+
+                // 先画骨骼的宽点击热区 (不可见)
+                for (const [a, b] of BONES) {
+                    const pa = JOINT_LAYOUT[a];
+                    const pb = JOINT_LAYOUT[b];
+                    const hit = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                    hit.setAttribute('x1', pa.x);
+                    hit.setAttribute('y1', pa.y);
+                    hit.setAttribute('x2', pb.x);
+                    hit.setAttribute('y2', pb.y);
+                    hit.setAttribute('class', 'bone-hit');
+                    hit.dataset.a = a;
+                    hit.dataset.b = b;
+                    hit.addEventListener('click', () => toggleBone(a, b));
+                    svg.appendChild(hit);
+                }
+
+                // 再画可见骨骼线
+                for (const [a, b] of BONES) {
+                    const pa = JOINT_LAYOUT[a];
+                    const pb = JOINT_LAYOUT[b];
+                    const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                    line.setAttribute('x1', pa.x);
+                    line.setAttribute('y1', pa.y);
+                    line.setAttribute('x2', pb.x);
+                    line.setAttribute('y2', pb.y);
+                    line.setAttribute('stroke', DEFAULT_COLOR);
+                    line.setAttribute('class', 'bone-line');
+                    line.dataset.a = a;
+                    line.dataset.b = b;
+                    line.addEventListener('click', () => toggleBone(a, b));
+                    svg.appendChild(line);
+                }
+
+                // 最后画关节点 (仅作视觉参考，不响应点击)
+                for (let i = 0; i < NUM_JOINTS; i++) {
+                    const pos = JOINT_LAYOUT[i];
+                    const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                    circle.setAttribute('cx', pos.x);
+                    circle.setAttribute('cy', pos.y);
+                    circle.setAttribute('r', '6');
+                    circle.setAttribute('fill', DEFAULT_COLOR);
+                    circle.setAttribute('class', 'joint-circle');
+                    circle.dataset.joint = i;
+                    circle.innerHTML = '<title>关节 ' + i + '</title>';
+                    svg.appendChild(circle);
+                }
+            }
+            initJointPanel();
 
             animate(0);
         </script>
